@@ -1,0 +1,477 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>rtslam install &larr; </title>
+   <meta name="author" content="YiMeng Yang" />
+
+   <link rel="start" href="/" />
+
+	
+	
+	
+  	<link rel="alternate" type="application/atom+xml" href="http://feeds.feedburner.com/feedname" title="RSS feed" />
+	
+	
+
+
+
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/pygments.css" type="text/css" />
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/syntax.css" type="text/css" />   
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/screen.css" type="text/css" />
+<style>
+.ymy_div {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 40px;
+}
+
+
+.triangle-isosceles {
+  position:relative;
+  padding:15px;
+  margin:1em 0 3em;
+  color:#000;
+  background:#EEE; /* default background for browsers without gradient support */
+  /* css3 */
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+  -webkit-border-radius:10px;
+  -moz-border-radius:10px;
+  border-radius:10px;
+}
+
+/* Variant : for top positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.top {
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+}
+
+/* Variant : for left/right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.left {
+  margin-left:50px;
+  background:#EEE;
+}
+
+/* Variant : for right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.right {
+  margin-right:50px;
+  background:#EEE;
+}
+
+/* THE TRIANGLE
+------------------------------------------------------------------------------------------------------------------------------- */
+
+/* creates triangle */
+.triangle-isosceles:after {
+  content:"";
+  position:absolute;
+  bottom:-15px; /* value = - border-top-width - border-bottom-width */
+  left:50px; /* controls horizontal position */
+  border-width:15px 15px 0; /* vary these values to change the angle of the vertex */
+  border-style:solid;
+  border-color:#EEE transparent;
+    /* reduce the damage in FF3.0 */
+    display:block; 
+    width:0;
+}
+
+/* Variant : top
+------------------------------------------ */
+
+.triangle-isosceles.top:after {
+  top:-15px; /* value = - border-top-width - border-bottom-width */
+  right:50px; /* controls horizontal position */
+  bottom:auto;
+  left:auto;
+  border-width:0 15px 15px; /* vary these values to change the angle of the vertex */
+  border-color:#EEE transparent;
+}
+
+/* Variant : left
+------------------------------------------ */
+
+.triangle-isosceles.left:after {
+  top:16px; /* controls vertical position */
+  left:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  border-width:10px 50px 10px 0;
+  border-color:transparent #EEE;
+}
+
+/* Variant : right
+------------------------------------------ */
+
+.triangle-isosceles.right:after {
+  top:16px; /* controls vertical position */
+  right:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  left:auto;
+  border-width:10px 0 10px 50px;
+  border-color:transparent #EEE;
+}
+
+
+#top-link {
+    PADDING-RIGHT: 10px;     
+    PADDING-LEFT: 10px; 
+    FONT-WEIGHT: bold; 
+    
+    BACKGROUND: whiteSmoke; 
+    PADDING-BOTTOM: 10px;
+    filter:alpha(opacity=20);
+    opacity:.2; 
+    BOTTOM: 5px; 
+    PADDING-TOP: 10px;     
+    POSITION: fixed; 
+    TEXT-DECORATION: none
+}
+
+
+
+</style>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/miaov.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shCore.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shBrushJScript.js"></script>
+  <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/shCoreDefault.css"/>
+ <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/miaov_style.css"/>
+ <script type="text/javascript">
+
+    SyntaxHighlighter.all();
+/**
+ * 回到页面顶部
+ * @param acceleration 加速度
+ * @param time 时间间隔 (毫秒)
+ **/
+function goTop(acceleration, time) {
+    acceleration = acceleration || 0.1;
+    time = time || 16;
+ 
+    var x1 = 0;
+    var y1 = 0;
+    var x2 = 0;
+    var y2 = 0;
+    var x3 = 0;
+    var y3 = 0;
+ 
+    if (document.documentElement) {
+        x1 = document.documentElement.scrollLeft || 0;
+        y1 = document.documentElement.scrollTop || 0;
+    }
+    if (document.body) {
+        x2 = document.body.scrollLeft || 0;
+        y2 = document.body.scrollTop || 0;
+    }
+    var x3 = window.scrollX || 0;
+    var y3 = window.scrollY || 0;
+ 
+    // 滚动条到页面顶部的水平距离
+    var x = Math.max(x1, Math.max(x2, x3));
+    // 滚动条到页面顶部的垂直距离
+    var y = Math.max(y1, Math.max(y2, y3));
+ 
+    // 滚动距离 = 目前距离 / 速度, 因为距离原来越小, 速度是大于 1 的数, 所以滚动距离会越来越小
+    var speed = 1 + acceleration;
+    window.scrollTo(Math.floor(x / speed), Math.floor(y / speed));
+ 
+    // 如果距离不为零, 继续调用迭代本函数
+    if(x > 0 || y > 0) {
+        var invokeFunction = "goTop(" + acceleration + ", " + time + ")";
+        window.setTimeout(invokeFunction, time);
+    }
+}
+
+ </script>
+
+</head>
+<body id="">
+<div id="site">
+  
+  <div id="header">
+    <h1>
+    	<a href="/" title="Jekyll Bootstrap">Jekyll Bootstrap</a>
+    	<span class="byline">&larr; <a href="/">YiMeng Yang</a></span>
+    </h1>
+    <ul class="nav">
+      <li><a class="home" href="/">Home</a></li>
+      <li><a  href="/life.html">Life</a></li>
+      <li><a  href="/work.html">Work</a></li>
+      <li><a  href="/about.html">About</a></li>
+      <li><a  href="/other.html">Other</a></li>
+    </ul>
+  </div>
+
+  
+<div id="page">
+	
+  <h1 class="emphnext">rtslam install</h1>
+
+
+  <h4 id='id81'>摘要</h4>
+
+<p>由于最近要开始研究机器人的室内定位的问题，而采用的算法是slam，而目前，有老外已经有了一套开源的项目了，其采用的是EKF——SLAM的解决方案，于是就先将这套开源项目拿来分析一下。而本文的目的在于说明运行这套开源项目的过程。</p>
+
+<h4 id='id82'>目录</h4>
+
+<ol>
+<li><a href='#a1'>Dependencies</a></li>
+
+<li><a href='#a2'>gdhe</a></li>
+
+<li><a href='#a3'>Jarfar Installation</a></li>
+</ol>
+<a name='a1'> </a>
+<h4 id='dependencies'>Dependencies</h4>
+
+<h3 id='standard_development_tools'>Standard development tools</h3>
+
+<p>由于笔者使用的是ubuntu系统，因此，下面的几个依赖都是比较简单的，直接利用apt-get就可以简单的装好。</p>
+
+<h2 id='gccc'>gcc-c++</h2>
+
+<h2 id='make'>make</h2>
+
+<h2 id='cmake'>cmake</h2>
+
+<h2 id='git'>git</h2>
+
+<h3 id='external_libraries'>External libraries</h3>
+
+<h2 id='boost__140'>boost &gt;= 1.40</h2>
+
+<p>关于boost的话，就不是简单的就可以搞定，需要一些步骤。</p>
+<pre class='brush: js;'>
+wget http://ncu.dl.sourceforge.net/project/boost/boost/1.52.0/boost_1_52_0.tar.bz2
+tar -xvf boost_1_52_0.tar.bz2
+cd boost_1_52_0
+chmod u+x bootstrap.sh
+./bootstrap.sh
+./b2 install
+</pre>
+<h2 id='boostsandboxnumericbindings'>boost-sandbox/numeric-bindings</h2>
+<pre class='brush: js;'>
+svn co http://svn.boost.org/svn/boost/sandbox/numeric_bindings boost-sandbox/
+</pre>
+<p>boost-sandbox的部分不需要进行编译或者其他的动作，只需要下载后，就可以了。</p>
+
+<h2 id='lapack'>lapack</h2>
+<pre class='brush: js;'>
+wget http://www.netlib.org/lapack/lapack-3.3.1.tgz
+tar -xvf lapack-3.3.1.tgz
+cd lapack-3.3.1
+cp make.inc.example make.inc
+make
+make install
+</pre>
+<h2 id='opencv_21_24'>opencv &#62;=2.1 &#60;2.4</h2>
+
+<p>安装过程</p>
+<pre class='brush: js;'>
+sudo apt-get install build-essential libgtk2.0-dev libavcodec-dev libavformat-dev libjpeg62-dev libtiff4-dev cmake libswscale-dev libjasper-dev
+
+wget http://sourceforge.net/projects/opencvlibrary/files/opencv-unix/2.2/OpenCV-2.2.0.tar.bz2
+
+tar xfv OpenCV-2.2.0.tar.bz2
+rm OpenCV-2.2.0.tar.bz2
+cd OpenCV-2.2.0
+mkdir opencv.build
+cd opencv.build
+
+
+cmake ..
+make
+sudo make install
+
+</pre>
+<p>配置库连接，需要配置如下文件 <pre class='brush: js;'>
+sudo gedit /etc/ld.so.conf.d/opencv.conf
+</pre> 并且添加如下内容 <pre class='brush: js;'>
+/usr/local/lib
+</pre></p>
+
+<p>然后运行</p>
+<pre class='brush: js;'>
+sudo ldconfig
+</pre>
+<p>最后，编辑如下文件</p>
+<pre class='brush: js;'>
+sudo gedit /etc/bash.bashrc
+</pre>
+<p>并且添加如下的内容</p>
+<pre class='brush: js;'>
+PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
+export PKG_CONFIG_PATH
+</pre>
+<h2 id='qt4_optional_for_2d_display'>qt4 (optional, for 2D display)</h2>
+
+<p>这个的安装也是比较的简单，直接的利用apt-get的包管理器进行安装即可。</p>
+<pre class='brush: js;'>
+sudo apt-get install libqt4-dev libqt4-debug libqt4-gui libqt4-sql qt4-dev-tools qt4-doc qt4-designer qt4-qtconfig
+</pre>
+<h3 id='laas_libraries'>LAAS libraries</h3>
+
+<h2 id='gdhe'><a href='#a2'>gdhe</a></h2>
+
+<h2 id='viam_optional_for_live_use_firewire_cameras'>viam (optional, for live use firewire cameras)</h2>
+<pre class='brush: js;'>
+wget http://distfiles.openrobots.org/viam-libs/viam-libs-1.10.tar.gz
+tar -xvf viam-libs-1.10.tar.gz
+cd viam-libs-1.10
+./configure
+make
+make install
+</pre>
+<p>viam的官网在<a href='http://homepages.laas.fr/mallet/soft/image/viam-libs'>此</a></p>
+
+<h2 id='mti_driver_optional_for_live_use_of_xsens_mti_imu'><a href='http://trac.laas.fr/openrobots/robotpkg/hardware/MTI/index.html'>MTI driver</a> (optional, for live use of XSens MTi IMU)</h2>
+<pre class='brush: js;'>
+wget ftp://ftp.openrobots.org/pub/openrobots/MTI-0.5.tar.gz
+tar -xvf MTI-0.5.tar.gz
+cd MTI-0.5
+./configure
+make
+make install
+</pre><a name='a2'> </a>
+<h4 id='gdhe'>gdhe</h4>
+
+<h3 id='requirements'>Requirements</h3>
+
+<h2 id='gnu_make'>GNU make</h2>
+
+<h2 id='mkdep'>mkdep</h2>
+
+<h2 id='libjpeg'>libjpeg</h2>
+
+<h2 id='libxpm'>libXpm</h2>
+
+<h2 id='opengl_and_glu'>OpenGL and GLU</h2>
+<pre class='brush: js;'>
+sudo apt-get install libglut3 libglut3-dev freeglut3
+</pre>
+<h2 id='tcl_and_tk__84'><a href='http://tcl.tk/'>Tcl and Tk</a> &#62;= 8.4</h2>
+
+<p>在这里，需要注意的是，需要安装版本8.5，否则若是安装8.4的话，则会报出tk.tcl不可用。应该是版本兼容问题。</p>
+<pre class='brush: js;'>
+wget http://prdownloads.sourceforge.net/tcl/tcl8.5.12-src.tar.gz
+tar -xvf tcl8.5.12-src.tar.gz
+cd tcl8.5.12-src
+cd unix
+./configure
+make
+make install
+wget http://prdownloads.sourceforge.net/tcl/tk8.5.12-src.tar.gz
+tar -xvf tk8.5.12-src.tar.gz
+cd tk8.5.12
+cd unix
+./configure
+make
+make install
+</pre>
+<h3 id='download'>Download</h3>
+
+<p>先下载<a href='http://distfiles.openrobots.org/gdhe/gdhe-3.8.2.tar.gz'>gdhe-3.8.2.tar.gz</a></p>
+<pre class='brush: js;'>
+wget http://distfiles.openrobots.org/gdhe/gdhe-3.8.2.tar.gz
+tar -xvf gdhe-3.8.2.tar.gz
+cd gdhe-3.8.2
+./configure
+make
+make install
+</pre><a name='a3'> </a>
+<h4 id='jarfar_installation'>Jarfar Installation</h4>
+
+<h3 id='download'>Download</h3>
+<pre class='brush: js;'>
+git clone git://trac.laas.fr/git/robots/jafar/jafar.git
+</pre>
+<h3 id='configure_the_build_system'>Configure the build system</h3>
+<pre class='brush: js;'>
+mkdir $JAFAR_DIR/build
+cd $JAFAR_DIR/build
+cmake ../ -DENABLE_TCL=OFF -DENABLE_RUBY=OFF -DCMAKE_BUILD_TYPE=release \
+-DBOOST_ROOT=/home/xxx/package/boost_1_51_0 \
+-DPATH_TO_BOOST_SANDBOX=/home/xxx/package/boost-sandbox \
+-DOpenCV_ROOT_DIR=/home/xxx/package/OpenCV-2.2.0
+</pre>
+<h3 id='rtslam_installation'>RT-SLAM installation</h3>
+<pre class='brush: js;'>
+cd $JAFAR_DIR
+bin/jafar_checkout rtslam
+bin/jafar_checkout qdisplay
+bin/jafar_checkout gdhe
+cd build
+make
+</pre>
+
+  <address class="signature">
+    <a class="author" href="/">YiMeng Yang</a> 
+    <span class="date">08 November 2012</span>
+    <span class="location"></span>
+  </address>
+  
+  <div class="prev-next">
+  
+    <a href="/2012/12/11/linux-screen-resolution" class="next" title="Linux Screen Resolution">Next Post &rarr;</a>
+  
+  
+    <a href="/linux work clanguage/2012/10/23/" class="prev" title="加密和解密">&larr; Earlier Post</a>
+  
+  </div>
+  
+</div><!-- End Page -->
+
+
+
+
+  
+  <div id="footer">
+  	<address>
+  		<span class="copyright">
+  			Content by <a href="/info/site.html">YiMeng Yang</a>. Design by 
+  			<a href="http://mark.reid.name/">Mark Reid</a>
+  			<br/>
+  			(<a rel="licence" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Some rights reserved</a>)			
+  		</span>
+  		<span class="engine">
+  			Powered by <a href="http://github.com/mojombo/jekyll/" title="A static, minimalist CMS">Jekyll</a>
+  		</span>
+  	</address>
+  </div>
+  
+</div>
+
+<!--[if IE 6]>
+<script type="text/javascript"> 
+	/*Load jQuery if not already loaded*/ if(typeof jQuery == 'undefined'){ document.write("<script type=\"text/javascript\"   src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js\"></"+"script>"); var __noconflict = true; } 
+	var IE6UPDATE_OPTIONS = {
+		icons_path: "http://static.ie6update.com/hosted/ie6update/images/"
+	}
+</script>
+<script type="text/javascript" src="http://static.ie6update.com/hosted/ie6update/ie6update.js"></script>
+<![endif]-->
+
+  
+
+<a id=top-link onclick="goTop();return false;" href="javascript:void(0);"><img src="/images/uparrow.png"  title="返回顶部" /></a> 
+
+
+
+</body>
+</html>
+
