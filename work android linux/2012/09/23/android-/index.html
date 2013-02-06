@@ -1,0 +1,700 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>android 启动过程分析 &larr; </title>
+   <meta name="author" content="YiMeng Yang" />
+
+   <link rel="start" href="/" />
+
+	
+	
+	
+  	<link rel="alternate" type="application/atom+xml" href="http://feeds.feedburner.com/feedname" title="RSS feed" />
+	
+	
+
+
+
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/pygments.css" type="text/css" />
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/syntax.css" type="text/css" />   
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/screen.css" type="text/css" />
+<style>
+.ymy_div {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 40px;
+}
+
+
+.triangle-isosceles {
+  position:relative;
+  padding:15px;
+  margin:1em 0 3em;
+  color:#000;
+  background:#EEE; /* default background for browsers without gradient support */
+  /* css3 */
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+  -webkit-border-radius:10px;
+  -moz-border-radius:10px;
+  border-radius:10px;
+}
+
+/* Variant : for top positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.top {
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+}
+
+/* Variant : for left/right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.left {
+  margin-left:50px;
+  background:#EEE;
+}
+
+/* Variant : for right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.right {
+  margin-right:50px;
+  background:#EEE;
+}
+
+/* THE TRIANGLE
+------------------------------------------------------------------------------------------------------------------------------- */
+
+/* creates triangle */
+.triangle-isosceles:after {
+  content:"";
+  position:absolute;
+  bottom:-15px; /* value = - border-top-width - border-bottom-width */
+  left:50px; /* controls horizontal position */
+  border-width:15px 15px 0; /* vary these values to change the angle of the vertex */
+  border-style:solid;
+  border-color:#EEE transparent;
+    /* reduce the damage in FF3.0 */
+    display:block; 
+    width:0;
+}
+
+/* Variant : top
+------------------------------------------ */
+
+.triangle-isosceles.top:after {
+  top:-15px; /* value = - border-top-width - border-bottom-width */
+  right:50px; /* controls horizontal position */
+  bottom:auto;
+  left:auto;
+  border-width:0 15px 15px; /* vary these values to change the angle of the vertex */
+  border-color:#EEE transparent;
+}
+
+/* Variant : left
+------------------------------------------ */
+
+.triangle-isosceles.left:after {
+  top:16px; /* controls vertical position */
+  left:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  border-width:10px 50px 10px 0;
+  border-color:transparent #EEE;
+}
+
+/* Variant : right
+------------------------------------------ */
+
+.triangle-isosceles.right:after {
+  top:16px; /* controls vertical position */
+  right:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  left:auto;
+  border-width:10px 0 10px 50px;
+  border-color:transparent #EEE;
+}
+
+
+#top-link {
+    PADDING-RIGHT: 10px;     
+    PADDING-LEFT: 10px; 
+    FONT-WEIGHT: bold; 
+    
+    BACKGROUND: whiteSmoke; 
+    PADDING-BOTTOM: 10px;
+    filter:alpha(opacity=20);
+    opacity:.2; 
+    BOTTOM: 5px; 
+    PADDING-TOP: 10px;     
+    POSITION: fixed; 
+    TEXT-DECORATION: none
+}
+
+
+
+</style>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/miaov.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shCore.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shBrushJScript.js"></script>
+  <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/shCoreDefault.css"/>
+ <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/miaov_style.css"/>
+ <script type="text/javascript">
+
+    SyntaxHighlighter.all();
+/**
+ * 回到页面顶部
+ * @param acceleration 加速度
+ * @param time 时间间隔 (毫秒)
+ **/
+function goTop(acceleration, time) {
+    acceleration = acceleration || 0.1;
+    time = time || 16;
+ 
+    var x1 = 0;
+    var y1 = 0;
+    var x2 = 0;
+    var y2 = 0;
+    var x3 = 0;
+    var y3 = 0;
+ 
+    if (document.documentElement) {
+        x1 = document.documentElement.scrollLeft || 0;
+        y1 = document.documentElement.scrollTop || 0;
+    }
+    if (document.body) {
+        x2 = document.body.scrollLeft || 0;
+        y2 = document.body.scrollTop || 0;
+    }
+    var x3 = window.scrollX || 0;
+    var y3 = window.scrollY || 0;
+ 
+    // 滚动条到页面顶部的水平距离
+    var x = Math.max(x1, Math.max(x2, x3));
+    // 滚动条到页面顶部的垂直距离
+    var y = Math.max(y1, Math.max(y2, y3));
+ 
+    // 滚动距离 = 目前距离 / 速度, 因为距离原来越小, 速度是大于 1 的数, 所以滚动距离会越来越小
+    var speed = 1 + acceleration;
+    window.scrollTo(Math.floor(x / speed), Math.floor(y / speed));
+ 
+    // 如果距离不为零, 继续调用迭代本函数
+    if(x > 0 || y > 0) {
+        var invokeFunction = "goTop(" + acceleration + ", " + time + ")";
+        window.setTimeout(invokeFunction, time);
+    }
+}
+
+ </script>
+
+</head>
+<body id="">
+<div id="site">
+  
+  <div id="header">
+    <h1>
+    	<a href="/" title="Jekyll Bootstrap">Jekyll Bootstrap</a>
+    	<span class="byline">&larr; <a href="/">YiMeng Yang</a></span>
+    </h1>
+    <ul class="nav">
+      <li><a class="home" href="/">Home</a></li>
+      <li><a  href="/life.html">Life</a></li>
+      <li><a  href="/work.html">Work</a></li>
+      <li><a  href="/about.html">About</a></li>
+      <li><a  href="/other.html">Other</a></li>
+    </ul>
+  </div>
+
+  
+<div id="page">
+	
+  <h1 class="emphnext">android 启动过程分析</h1>
+
+
+  <p>本文章主要是要对andorid的启动过程进行分析,当然,着重点不在于内核的过程,而是android的文件系统的构建过程,这个过程才是我们所关注的,另外关于linux内核的话,另外有一篇文章进行讲解.文件系统的启动过程包含了对文件系统的初始化过程以及设备的挂载还有权限的设置,而更重要的是我们要把注意力集中到android启动过程里启动了多少的服务, 以及这些服务具体如何的运作,以及要怎样对这个系统进行裁剪.</p>
+
+<h2 id='main'>一切从main函数开始</h2>
+
+<p>没有错, 要看过程,需要先找到android启动的入口,在哪里呢,</p>
+<pre class='brush: js;'>
+~/system/core/init/init.c
+
+int main(int argc, char **argv)
+{
+    int fd_count = 0;
+    int err;
+    struct pollfd ufds[4];
+    char *tmpdev;
+    char* debuggable;
+    char tmp[32];
+    int property_set_fd_init = 0;
+    int signal_fd_init = 0;
+    int keychord_fd_init = 0;
+
+    printf(" main  system-core-init-init.c start \n");
+
+    if (!strcmp(basename(argv[0]), "ueventd"))
+        return ueventd_main(argc, argv);
+</pre>
+<p>入口就是这个main函数了.</p>
+
+<h2 id='devfs_sysfs_tmpfs'>文件夹创建和devfs, sysfs, tmpfs的挂载</h2>
+
+<p>这部分主要的就是挂载了linux系统的设备文件系统devfs以及sysfs和tmpfs.</p>
+<pre class='brush: js;'>
+    mount("tmpfs", "/dev", "tmpfs", MS_NOSUID, "mode=0755");
+    mkdir("/dev/pts", 0755);
+    mkdir("/dev/socket", 0755);
+    mount("devpts", "/dev/pts", "devpts", 0, NULL);
+    mount("proc", "/proc", "proc", 0, NULL);
+    mount("sysfs", "/sys", "sysfs", 0, NULL);
+</pre>
+<h2 id='_klog'>输出重定向, 启动klog</h2>
+
+<p>下面这个函数的作用就是把系统的三种文件符号都重定向到了/dev/_null_,即 std_in, std_out, std_err.这样子的话,后面你加入的printf语句也好或者是错误信息也好,都没有办法在显示出来,因为都写到了/dev/_null_.</p>
+<pre class='brush: js;'>
+void open_devnull_stdio(void)
+{
+    int fd;
+    static const char *name = "/dev/__null__";
+    if (mknod(name, S_IFCHR | 0600, (1 &lt;&lt; 8) | 3) == 0) {
+        fd = open(name, O_RDWR);
+        unlink(name);
+        if (fd >= 0) {
+            dup2(fd, 0);
+            dup2(fd, 1);
+            dup2(fd, 2);
+            if (fd > 2) {
+                close(fd);
+            }
+            return;
+        }
+    }
+    exit(1);
+}
+</pre>
+<p>当然, 上面只是关闭了init进程的三种流,可是init进程要是有一些想要输出的信息怎么办呢, 这时候android就开启了klog,那么init进程有什么话就可以对klog讲了.</p>
+
+<p>初始化过程 <pre class='brush: js;'>
+void klog_init(void)
+{
+    static const char *name = "/dev/__kmsg__";
+    if (mknod(name, S_IFCHR | 0600, (1 &lt;&lt; 8) | 11) == 0) {
+        klog_fd = open(name, O_WRONLY);
+        fcntl(klog_fd, F_SETFD, FD_CLOEXEC);
+        unlink(name);
+    }
+}
+</pre></p>
+
+<p>输出调用的函数 <pre class='brush: js;'>
+void klog_write(int level, const char *fmt, ...)
+{
+    char buf[LOG_BUF_MAX];
+    va_list ap;
+    if (level &gt; klog_level) return;
+    if (klog_fd &lt; 0) return;
+    va_start(ap, fmt);
+    vsnprintf(buf, LOG_BUF_MAX, fmt, ap);
+    buf[LOG_BUF_MAX - 1] = 0;
+    va_end(ap);
+    write(klog_fd, buf, strlen(buf));
+}
+</pre></p>
+
+<h2 id='initrc'>解析init.rc文件</h2>
+
+<p>这部分的话则是解析根目录下的init.rc文件.init.rc是android文件系统的重要的配置文件.包括了一些重要的启动服务的配置等等.</p>
+<pre class='brush: js;'>
+init_parse_config_file("/init.rc");
+int init_parse_config_file(const char *fn)
+{
+    char *data;
+    data = read_file(fn, 0);
+    if (!data) return -1;
+    parse_config(fn, data);
+    DUMP();
+    return 0;
+}
+</pre>
+<p>其中, parse_config是一个重点函数</p>
+<pre class='brush: js;'>
+static void parse_config(const char *fn, char *s)
+{
+    struct parse_state state;
+    char *args[INIT_PARSER_MAXARGS];
+    int nargs;
+    nargs = 0;
+    state.filename = fn;
+    state.line = 0;
+    state.ptr = s;
+    state.nexttoken = 0;
+    state.parse_line = parse_line_no_op;
+    for (;;) {
+        //next_token的作用在于提取文件里的一个独立的单词(函数里面会自动忽略注释)
+        switch (next_token(&amp;state)) {
+        case T_EOF:
+            state.parse_line(&amp;state, 0, 0);
+            return;
+        case T_NEWLINE:
+            //到了新的一行了,若前面的一行已经有读取了至少一个单词,就对args个单词进行语法分析.此时我们把这个当做一个句子
+            state.line++;
+            if (nargs) {
+                int kw = lookup_keyword(args[0]);
+                //从句子里面提取出关键字的keyword
+                if (kw_is(kw, SECTION)) {
+                //若句子的keyword属于section类型的话                
+                    state.parse_line(&amp;state, 0, 0);
+                    parse_new_section(&amp;state, kw, nargs, args);
+                } else {
+                    state.parse_line(&amp;state, nargs, args);
+                }
+                nargs = 0;
+            }
+            break;
+        case T_TEXT:
+        	//提取出了一个新单词, 并且把这个新单词存放到args数组里面.
+            if (nargs &lt; INIT_PARSER_MAXARGS) {
+                args[nargs++] = state.text;
+            }
+            break;
+        }
+    }
+}
+</pre>
+<p>上面的部分涉及到了一个可能令人很疑惑的keyword, 这个keyword到底是指什么呢,下面来个简单的介绍.在android里面,init.rc的keyword的类型分为如下几种</p>
+
+<ul>
+<li>OPTION 主要是用来给section设置一些参数</li>
+
+<li>COMMAND 主要的是用来定义一些操作</li>
+
+<li>SECTION 主要的有 on, service, import三个关键词</li>
+
+<li>K_UNKNOWN 未知 恩,简单的说,SECTION是父亲项, 而OPTION和COMMAND则是子项.</li>
+</ul>
+
+<p>具体的定义在keywords.h文件里面.</p>
+<pre class='brush: js;'>
+    KEYWORD(capability,  OPTION,  0, 0)
+    KEYWORD(chdir,       COMMAND, 1, do_chdir)
+    KEYWORD(chroot,      COMMAND, 1, do_chroot)
+    KEYWORD(class,       OPTION,  0, 0)
+    KEYWORD(class_start, COMMAND, 1, do_class_start)
+    KEYWORD(class_stop,  COMMAND, 1, do_class_stop)
+    KEYWORD(class_reset, COMMAND, 1, do_class_reset)
+    KEYWORD(console,     OPTION,  0, 0)
+    KEYWORD(critical,    OPTION,  0, 0)
+    KEYWORD(disabled,    OPTION,  0, 0)
+    KEYWORD(domainname,  COMMAND, 1, do_domainname)
+    KEYWORD(exec,        COMMAND, 1, do_exec)
+    KEYWORD(export,      COMMAND, 2, do_export)
+    KEYWORD(group,       OPTION,  0, 0)
+    KEYWORD(hostname,    COMMAND, 1, do_hostname)
+    KEYWORD(ifup,        COMMAND, 1, do_ifup)
+    KEYWORD(insmod,      COMMAND, 1, do_insmod)
+    KEYWORD(import,      SECTION, 1, 0)
+    KEYWORD(keycodes,    OPTION,  0, 0)
+    KEYWORD(mkdir,       COMMAND, 1, do_mkdir)
+</pre>
+<h2 id='section'>section的更多细节</h2>
+
+<p>前面有提到, SECTION是指由on, service, import三个关键字组成的,其中on的类型又被成为action,而service则为service.前面的只是定义好了一系列的section, 但是这些section定义好了以后,需要我们来先后的执行这些section,例如service,我们需要启动对应的服务.而对于on的action,则需要执行相应的command.</p>
+
+<h3 id='action'>action的执行顺序</h3>
+
+<p>通过查看源代码,可以发现on 的action的执行顺序如下:</p>
+<pre class='brush: js;'>
+action_for_each_trigger("early-init", action_add_queue_tail);
+queue_builtin_action(wait_for_coldboot_done_action, "wait_for_coldboot_done"); 
+queue_builtin_action(property_init_action, "property_init");
+queue_builtin_action(keychord_init_action, "keychord_init");
+queue_builtin_action(console_init_action, "console_init");
+queue_builtin_action(set_init_properties_action, "set_init_properties");
+action_for_each_trigger("init", action_add_queue_tail);
+action_for_each_trigger("early-fs", action_add_queue_tail);
+action_for_each_trigger("fs", action_add_queue_tail);
+action_for_each_trigger("post-fs", action_add_queue_tail);
+action_for_each_trigger("post-fs-data", action_add_queue_tail);
+queue_builtin_action(property_service_init_action, "property_service_init");
+queue_builtin_action(signal_init_action, "signal_init");
+queue_builtin_action(check_startup_action, "check_startup");
+queue_builtin_action(queue_property_triggers_action, "queue_property_triggers"); 
+</pre>
+<p>在知道了具体的执行顺序之后,个人觉得有必要需要去对每个执行的过程进行了解个大概.就是需要知道每个过程到底都做了些什么事情.</p>
+
+<h3 id='on_earlyinit'>on early-init</h3>
+
+<p>early-init的阶段做的事情如下</p>
+<pre class='brush: js;'>
+on early-init
+    # Set init and its forked children's oom_adj.
+    write /proc/1/oom_adj -16
+    start ueventd
+# create mountpoints
+    mkdir /mnt 0775 root system
+</pre>
+<p>oom_adj=-16,這可以確保init行程不會被回收. 其次,就是启动了ueventd服务.而ueventd的服务被定义如下</p>
+<pre class='brush: js;'>
+## Daemon processes to be run by init.
+##
+service ueventd /sbin/ueventd
+    class core
+    critical
+</pre>
+<p>恩,没有错,在这里,我将要详细的分析一下一个android的service具体是怎样启动起来的.</p>
+
+<p>先来看第一部分,清楚标签和判断是否已经正在运行 <pre class='brush: js;'>
+        /* starting a service removes it from the disabled or reset
+         * state and immediately takes it out of the restarting
+         * state if it was in there
+         */
+    //启动一个服务, 然后呢,把这个服务svc数据结构里的disabled,reset,restart等标签清除掉.
+    svc->flags &amp;= (~(SVC_DISABLED|SVC_RESTARTING|SVC_RESET));
+    svc->time_started = 0;
+        /* running processes require no additional work -- if
+         * they're in the process of exiting, we've ensured
+         * that they will immediately restart on exit, unless
+         * they are ONESHOT
+         */
+    //如果服务已经正在运行的话,则直接返回.
+    if (svc->flags &amp; SVC_RUNNING) {
+        return;
+    }
+</pre></p>
+
+<p>接着看第二部分,这部分主要是判断了是否需要终端以及系统是否有终端设备,还有就是判断该服务的执行文件是否存在.</p>
+<pre class='brush: js;'>
+    needs_console = (svc->flags &amp; SVC_CONSOLE) ? 1 : 0;
+   if (needs_console &amp;&amp; (!have_console)) {
+        ERROR("service '%s' requires console\n", svc->name);
+        svc->flags |= SVC_DISABLED;
+        return;
+    }
+    if (stat(svc->args[0], &amp;s) != 0) {
+        ERROR("cannot find '%s', disabling '%s'\n", svc->args[0], svc->name);
+        svc->flags |= SVC_DISABLED;
+        return;
+    }
+</pre>
+<p>注意看这部分的,这里开辟了一个新进程,这个新进程是属于要启动的服务的.首先,在原始进程的环境下先进行一系列的初始化的操作.这部分的初始化主要是开辟一些服务所需要的socket以及需要的环境变量.这些都保存到了全局的变量ENV里面. <pre class='brush: js;'>
+    pid = fork();
+    if (pid == 0) {
+        struct socketinfo *si;
+        struct svcenvinfo *ei;
+        char tmp[32];
+        int fd, sz;
+        if (properties_inited()) {
+            get_property_workspace(&amp;fd, &amp;sz);
+            sprintf(tmp, "%d,%d", dup(fd), sz);
+            add_environment("ANDROID_PROPERTY_WORKSPACE", tmp);
+        }
+        for (ei = svc->envvars; ei; ei = ei->next)
+            add_environment(ei->name, ei->value);
+        for (si = svc->sockets; si; si = si->next) {
+            int socket_type = (
+                    !strcmp(si->type, "stream") ? SOCK_STREAM :
+                        (!strcmp(si->type, "dgram") ? SOCK_DGRAM : SOCK_SEQPACKET));
+            int s = create_socket(si->name, socket_type,
+                                  si->perm, si->uid, si->gid);
+            if (s >= 0) {
+                publish_socket(si->name, s);
+            }
+        }
+</pre></p>
+
+<p>上面的代码里面,环境变量的类型是name-value的类型,而socket的类型的话也是如此,其name为其socket的指定名称,而value则是其socket的fd的对应字符串.</p>
+<pre class='brush: js;'>
+/* add_environment - add "key=value" to the current environment */
+int add_environment(const char *key, const char *val)
+{
+    int n;
+    for (n = 0; n &lt; 31; n++) {
+        if (!ENV[n]) {
+            size_t len = strlen(key) + strlen(val) + 2;
+            char *entry = malloc(len);
+            snprintf(entry, len, "%s=%s", key, val);
+            ENV[n] = entry;
+            return 0;
+        }
+    }
+    return 1;
+}
+</pre>
+<p>接着就是对于新开辟的服务进程进行一些用户id,组id等等的设置了,情况如下 <pre class='brush: js;'>
+        setpgid(0, getpid());
+    /* as requested, set our gid, supplemental gids, and uid */
+        if (svc->gid) {
+            if (setgid(svc->gid) != 0) {
+                ERROR("setgid failed: %s\n", strerror(errno));
+                _exit(127);
+            }
+        }
+        if (svc->nr_supp_gids) {
+            if (setgroups(svc->nr_supp_gids, svc->supp_gids) != 0) {
+                ERROR("setgroups failed: %s\n", strerror(errno));
+                _exit(127);
+            }
+        }
+        if (svc->uid) {
+            if (setuid(svc->uid) != 0) {
+                ERROR("setuid failed: %s\n", strerror(errno));
+                _exit(127);
+            }
+        }
+</pre></p>
+
+<p>最后,当然了,就是要调用exec函数,执行服务的对应的执行文件了.</p>
+<pre class='brush: js;'>
+        if (execve(svc->args[0], (char**) svc->args, (char**) ENV) &lt; 0) {
+            ERROR("cannot execve('%s'): %s\n", svc->args[0], strerror(errno));
+        }
+</pre>
+<p>好了,android的一个服务是如何启动的,我想这里应该是非常的清楚了吧.好,回到刚刚的话题吧,没有错,前面就是正要分析early-init的阶段里的过程呢,因为这个阶段启动了一个服务就是</p>
+<pre class='brush: js;'>
+## Daemon processes to be run by init.
+##
+service ueventd /sbin/ueventd
+    class core
+    critical
+</pre>
+<p>呃呃呃,好吧,来看看这个服务吧,首先,直接进入主题:</p>
+<pre class='brush: js;'>
+int ueventd_main(int argc, char **argv)
+{
+    struct pollfd ufd;
+    int nr;
+    char tmp[32];
+        /* Prevent fire-and-forget children from becoming zombies.
+         * If we should need to wait() for some children in the future
+         * (as opposed to none right now), double-forking here instead
+         * of ignoring SIGCHLD may be the better solution.
+         */
+    signal(SIGCHLD, SIG_IGN);
+    open_devnull_stdio();
+    klog_init();
+    INFO("starting ueventd\n");
+    ERROR("starting ueventd\n");
+    /* Respect hardware passed in through the kernel cmd line. Here we will look
+     * for androidboot.hardware param in kernel cmdline, and save its value in
+     * hardware[]. */
+    import_kernel_cmdline(0, import_kernel_nv);
+    get_hardware_name(hardware, &amp;revision);
+    ueventd_parse_config_file("/ueventd.rc");
+    snprintf(tmp, sizeof(tmp), "/ueventd.%s.rc", hardware);
+    ueventd_parse_config_file(tmp);
+    device_init();
+    ufd.events = POLLIN;
+    ufd.fd = get_device_fd();
+    //看到了没有,这个地方才是服务的主要的地方,恩,还是使用了poll的方法来访问,看来这种方法不仅可以用于socket,也可以用于非socket的文件标识符.
+    while(1) {
+        ufd.revents = 0;
+        nr = poll(&amp;ufd, 1, -1);
+        if (nr &lt;= 0)
+            continue;
+        if (ufd.revents == POLLIN)
+               handle_device_fd();
+    }
+}
+</pre>
+<h2 id='root'>破解文件系统root</h2>
+
+<p>由于涉及到的初始化的过程实在是太多了,我这里就不对每个初始化的过程进行详细的解说了. 但是有一个过程是不得不说的,那就是我们是如何通过串口登陆android的,由于笔者是通过串口连接android的系统的,因此这里就着重讲解这方面的内容了.自然,在可以进入android的ash控制台之后,我们就会想着说是不是应该要有root的权限,这样子才够瘾啊,恩,没有错,重点在于如何root android的文件系统.且看我慢慢说来.</p>
+
+<h3 id='id1'>找到入口函数</h3>
+
+<p>不管怎样,要想破解android的文件系统,首先要找到提供串口操作的服务在哪里.很好,我们需要先来看看init.rc文件.通过这里面,我们可以看到一个很清楚的项目.</p>
+<pre class='brush: js;'>
+service console /system/bin/sh
+    class core
+    console
+    disabled
+    user shell
+    group log
+on property:ro.debuggable=1
+    start console
+</pre>
+<p>没有错,看到了吧,这就是我们所需要的,因为串口一般都是用来进行调试的,因此通过debuggable的action来启动console的服务.目标就锁定到了sh的程序上了,因此目标就很清楚了.</p>
+
+<p>不过,先停下来,好好想想,之前有分析过android的服务是如何启动的,当中服务在启动的过程里有进行了一系列的初始化的过程,那个过程里面就有包含了一个就是用户id的处理.好,是不是找到了点了,上面的代码里面一个很显眼的就是 <pre class='brush: js;'>
+    user shell
+</pre> 看来,我们登录的话,终端进程的用户id是shell,那我们要是想要有root权限的话,要怎样做呢,没有错,就是要把这个shell改为root.恩,这样就ok了,当重新启动之后,就可以发现我们已经是root了.</p>
+<pre class='brush: js;'>
+service console /system/bin/sh
+    class core
+    console
+    disabled
+    user root
+    group log
+on property:ro.debuggable=1
+    start console
+</pre>
+
+  <address class="signature">
+    <a class="author" href="/">YiMeng Yang</a> 
+    <span class="date">23 September 2012</span>
+    <span class="location"></span>
+  </address>
+  
+  <div class="prev-next">
+  
+    <a href="/work linux/2012/09/23/android-linux" class="next" title="linux启动过程分析">Next Post &rarr;</a>
+  
+  
+    <a href="/work android linux/2012/09/22/android-socket" class="prev" title="Android socket权限问题">&larr; Earlier Post</a>
+  
+  </div>
+  
+</div><!-- End Page -->
+
+
+
+
+  
+  <div id="footer">
+  	<address>
+  		<span class="copyright">
+  			Content by <a href="/info/site.html">YiMeng Yang</a>. Design by 
+  			<a href="http://mark.reid.name/">Mark Reid</a>
+  			<br/>
+  			(<a rel="licence" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Some rights reserved</a>)			
+  		</span>
+  		<span class="engine">
+  			Powered by <a href="http://github.com/mojombo/jekyll/" title="A static, minimalist CMS">Jekyll</a>
+  		</span>
+  	</address>
+  </div>
+  
+</div>
+
+<!--[if IE 6]>
+<script type="text/javascript"> 
+	/*Load jQuery if not already loaded*/ if(typeof jQuery == 'undefined'){ document.write("<script type=\"text/javascript\"   src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js\"></"+"script>"); var __noconflict = true; } 
+	var IE6UPDATE_OPTIONS = {
+		icons_path: "http://static.ie6update.com/hosted/ie6update/images/"
+	}
+</script>
+<script type="text/javascript" src="http://static.ie6update.com/hosted/ie6update/ie6update.js"></script>
+<![endif]-->
+
+  
+
+<a id=top-link onclick="goTop();return false;" href="javascript:void(0);"><img src="/images/uparrow.png"  title="返回顶部" /></a> 
+
+
+
+</body>
+</html>
+

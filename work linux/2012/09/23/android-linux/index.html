@@ -1,0 +1,564 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>linux启动过程分析 &larr; </title>
+   <meta name="author" content="YiMeng Yang" />
+
+   <link rel="start" href="/" />
+
+	
+	
+	
+  	<link rel="alternate" type="application/atom+xml" href="http://feeds.feedburner.com/feedname" title="RSS feed" />
+	
+	
+
+
+
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/pygments.css" type="text/css" />
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/syntax.css" type="text/css" />   
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/screen.css" type="text/css" />
+<style>
+.ymy_div {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 40px;
+}
+
+
+.triangle-isosceles {
+  position:relative;
+  padding:15px;
+  margin:1em 0 3em;
+  color:#000;
+  background:#EEE; /* default background for browsers without gradient support */
+  /* css3 */
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+  -webkit-border-radius:10px;
+  -moz-border-radius:10px;
+  border-radius:10px;
+}
+
+/* Variant : for top positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.top {
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+}
+
+/* Variant : for left/right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.left {
+  margin-left:50px;
+  background:#EEE;
+}
+
+/* Variant : for right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.right {
+  margin-right:50px;
+  background:#EEE;
+}
+
+/* THE TRIANGLE
+------------------------------------------------------------------------------------------------------------------------------- */
+
+/* creates triangle */
+.triangle-isosceles:after {
+  content:"";
+  position:absolute;
+  bottom:-15px; /* value = - border-top-width - border-bottom-width */
+  left:50px; /* controls horizontal position */
+  border-width:15px 15px 0; /* vary these values to change the angle of the vertex */
+  border-style:solid;
+  border-color:#EEE transparent;
+    /* reduce the damage in FF3.0 */
+    display:block; 
+    width:0;
+}
+
+/* Variant : top
+------------------------------------------ */
+
+.triangle-isosceles.top:after {
+  top:-15px; /* value = - border-top-width - border-bottom-width */
+  right:50px; /* controls horizontal position */
+  bottom:auto;
+  left:auto;
+  border-width:0 15px 15px; /* vary these values to change the angle of the vertex */
+  border-color:#EEE transparent;
+}
+
+/* Variant : left
+------------------------------------------ */
+
+.triangle-isosceles.left:after {
+  top:16px; /* controls vertical position */
+  left:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  border-width:10px 50px 10px 0;
+  border-color:transparent #EEE;
+}
+
+/* Variant : right
+------------------------------------------ */
+
+.triangle-isosceles.right:after {
+  top:16px; /* controls vertical position */
+  right:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  left:auto;
+  border-width:10px 0 10px 50px;
+  border-color:transparent #EEE;
+}
+
+
+#top-link {
+    PADDING-RIGHT: 10px;     
+    PADDING-LEFT: 10px; 
+    FONT-WEIGHT: bold; 
+    
+    BACKGROUND: whiteSmoke; 
+    PADDING-BOTTOM: 10px;
+    filter:alpha(opacity=20);
+    opacity:.2; 
+    BOTTOM: 5px; 
+    PADDING-TOP: 10px;     
+    POSITION: fixed; 
+    TEXT-DECORATION: none
+}
+
+
+
+</style>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/miaov.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shCore.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shBrushJScript.js"></script>
+  <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/shCoreDefault.css"/>
+ <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/miaov_style.css"/>
+ <script type="text/javascript">
+
+    SyntaxHighlighter.all();
+/**
+ * 回到页面顶部
+ * @param acceleration 加速度
+ * @param time 时间间隔 (毫秒)
+ **/
+function goTop(acceleration, time) {
+    acceleration = acceleration || 0.1;
+    time = time || 16;
+ 
+    var x1 = 0;
+    var y1 = 0;
+    var x2 = 0;
+    var y2 = 0;
+    var x3 = 0;
+    var y3 = 0;
+ 
+    if (document.documentElement) {
+        x1 = document.documentElement.scrollLeft || 0;
+        y1 = document.documentElement.scrollTop || 0;
+    }
+    if (document.body) {
+        x2 = document.body.scrollLeft || 0;
+        y2 = document.body.scrollTop || 0;
+    }
+    var x3 = window.scrollX || 0;
+    var y3 = window.scrollY || 0;
+ 
+    // 滚动条到页面顶部的水平距离
+    var x = Math.max(x1, Math.max(x2, x3));
+    // 滚动条到页面顶部的垂直距离
+    var y = Math.max(y1, Math.max(y2, y3));
+ 
+    // 滚动距离 = 目前距离 / 速度, 因为距离原来越小, 速度是大于 1 的数, 所以滚动距离会越来越小
+    var speed = 1 + acceleration;
+    window.scrollTo(Math.floor(x / speed), Math.floor(y / speed));
+ 
+    // 如果距离不为零, 继续调用迭代本函数
+    if(x > 0 || y > 0) {
+        var invokeFunction = "goTop(" + acceleration + ", " + time + ")";
+        window.setTimeout(invokeFunction, time);
+    }
+}
+
+ </script>
+
+</head>
+<body id="">
+<div id="site">
+  
+  <div id="header">
+    <h1>
+    	<a href="/" title="Jekyll Bootstrap">Jekyll Bootstrap</a>
+    	<span class="byline">&larr; <a href="/">YiMeng Yang</a></span>
+    </h1>
+    <ul class="nav">
+      <li><a class="home" href="/">Home</a></li>
+      <li><a  href="/life.html">Life</a></li>
+      <li><a  href="/work.html">Work</a></li>
+      <li><a  href="/about.html">About</a></li>
+      <li><a  href="/other.html">Other</a></li>
+    </ul>
+  </div>
+
+  
+<div id="page">
+	
+  <h1 class="emphnext">linux启动过程分析</h1>
+
+
+  <p>这篇文章的目的在于分析linux内核的启动过程,它到底做了些什么事情,这么多的事情,内核到底是怎样安排的,进程调度机制如何进行初始化的,内存方面又是如何操作的,文件系统又是如何的运行,什么时候开始挂载文件系统,什么时候开始操作设备.这些都是我们这篇文章所关注的.</p>
+
+<h1 id='start_kernel'>从start_kernel函数开始</h1>
+
+<p>恩, 首先, 需要找到入口函数, 而入口函数是在init/main.c文件里, 我们首先来看看这个函数吧.</p>
+<pre class='brush: js;'>   
+asmlinkage void __init start_kernel(void)
+{
+	char * command_line;
+	extern const struct kernel_param __start___param[], __stop___param[];
+	smp_setup_processor_id();
+	lockdep_init();
+	debug_objects_early_init();
+</pre>
+<ol>
+<li>首先需要来看看smp_setup_processor_id函数,这个函数的作用在于获取当前正在执行初始化的处理器ID,如果仔细地阅读完初始化函数start_kernel，就会发现里面还有调用smp_processor_id()函数，这两个函数都是获取多处理器的ID，为什么会需要两个函数呢？其实这里有一个差别的，smp_setup_processor_id()函数可以不调用setup_arch()初始化函数就可以使用，而smp_processor_id()函数是一定要调用setup_arch()初始化函数后，才能使用。smp_setup_processor_id()函数是直接获取对称多处理器的ID，而smp_processor_id()函数是获取变量保存的处理器ID，因此一定要调用初始化函数。由于smp_setup_processor_id()函数不用调用初始化函数，可以放在内核初始化start_kernel函数的最前面使用，而函数smp_processor_id()只能放到setup_arch()函数调用的后面使用了。smp_setup_processor_id()函数每次都要中断CPU去获取ID，这样效率比较低。如果内核只是有单处理器系统，smp_setup_processor_id()函数是是空的，不必要做任保的处理。</li>
+
+<li>lockdep_init(); 初始化互斥锁的dependency</li>
+
+<li>debug_objects_early_init(); 初始化debug kernel相关</li>
+</ol>
+
+<h1 id='cgroup'>初始化带防止栈溢出攻击保护的堆栈,cgroup,以及关中断</h1>
+<pre class='brush: js;'>  
+	boot_init_stack_canary();//stack_canary的是带防止栈溢出攻击保护的堆栈。
+	cgroup_init_early();//初始化cgroup
+	local_irq_disable();//很明显,关中断,后面要做一些重要的事情.
+	early_boot_irqs_disabled = true;
+</pre>
+<p># <pre class='brush: js;'>  
+	tick_init();//初始化time ticket，时钟
+	boot_cpu_init();//用以启动的CPU进行初始化。也就是初始化CPU0
+	page_address_init();//初始化页面
+	printk(KERN_NOTICE "%s", linux_banner);
+	setup_arch(&amp;command_line);//CPU架构相关的初始化
+	mm_init_owner(&amp;init_mm, &amp;init_task);//初始化内存管理
+	mm_init_cpumask(&amp;init_mm);
+	setup_command_line(command_line);//处理启动命令行
+	setup_nr_cpu_ids();
+	setup_per_cpu_areas();
+	smp_prepare_boot_cpu();	//准备boot_cpu
+</pre></p>
+
+<h1 id='id2'>解析启动参数</h1>
+<pre class='brush: js;'> 
+	build_all_zonelists(NULL);//zone初始化
+	page_alloc_init();//初始化page allocation相关结构
+	printk(KERN_NOTICE "Kernel command line: %s\n", boot_command_line);
+	parse_early_param();
+	parse_args("Booting kernel", static_command_line, __start___param,
+		   __stop___param - __start___param,
+		   &amp;unknown_bootoption);//解析启动参数
+</pre>
+<p>#</p>
+<pre class='brush: js;'> 
+	setup_log_buf(0);
+	pidhash_init();//初始化process ID hash表
+	vfs_caches_init_early();//文件系统caches预初始化
+	sort_main_extable();//初始化exception table
+	trap_init();//初始化trap，用以处理错误执行代码
+	mm_init();//初始化内存管理
+	sched_init();//进程调度初始化
+	/*	
+</pre>
+<p># <pre class='brush: js;'> 
+	preempt_disable();
+	if (!irqs_disabled()) {
+		printk(KERN_WARNING "start_kernel(): bug: interrupts were "
+				"enabled *very* early, fixing it\n");
+		local_irq_disable();
+	}
+	idr_init_cache();
+	perf_event_init();
+	rcu_init();//Read_Copy_Update机制初始
+	radix_tree_init();
+	/* init some links before init_ISA_irqs() */
+	early_irq_init();
+	init_IRQ();//初始化中断
+	prio_tree_init();
+	init_timers();
+	hrtimers_init();
+	softirq_init();
+	timekeeping_init();
+	time_init();//初始化时钟
+	profile_init();//Profile初始化
+	call_function_init();
+	if (!irqs_disabled())
+		printk(KERN_CRIT "start_kernel(): bug: interrupts were "
+				 "enabled early\n");
+	early_boot_irqs_disabled = false;
+	local_irq_enable();
+</pre></p>
+
+<p>#</p>
+<pre class='brush: js;'> 
+	gfp_allowed_mask = __GFP_BITS_MASK;
+	kmem_cache_init_late();//初始化CPU Cache
+	console_init();//初始化console
+	if (panic_later)
+		panic(panic_later, panic_param);
+	lockdep_info();
+	locking_selftest();//自测试锁
+</pre>
+<p>#</p>
+<pre class='brush: js;'> 
+	page_cgroup_init();//页面初始
+	enable_debug_pagealloc();//页面分配debug启用
+	debug_objects_mem_init();//debug object是什么？
+	kmemleak_init();//memory leak 侦测初始化
+	setup_per_cpu_pageset();//设置每个CPU的页面集合
+	numa_policy_init();// NUMA (Non Uniform Memory Access) policy 
+	if (late_time_init)
+		late_time_init();
+	sched_clock_init();//初始化调度时钟
+	calibrate_delay();//协同不同CPU的时钟
+	pidmap_init();
+	anon_vma_init();
+</pre>
+<p>#</p>
+<pre class='brush: js;'> 
+	thread_info_cache_init();//初始化thread info
+	cred_init();//credential
+	fork_init(totalram_pages);//初始化fork
+	proc_caches_init();//初始化/proc的cache?
+	buffer_init();
+	key_init();
+	security_init();
+	dbg_late_init();
+	vfs_caches_init(totalram_pages);//文件系统cache初始化
+	signals_init();
+	/* rootfs populating might need page-writeback */
+	page_writeback_init();
+</pre>
+<p>#</p>
+<pre class='brush: js;'> 
+	cgroup_init();
+	cpuset_init();
+	taskstats_init_early();
+	delayacct_init();
+	check_bugs();
+	acpi_early_init(); /* before LAPIC and SMP init */
+	sfi_init_late();
+	ftrace_init();
+	/* Do the rest non-__init'ed, we're now alive */
+	rest_init();//重点的动作就在这个函数里发生
+</pre>
+<h1 id='rest_init'>rest_init</h1>
+<pre class='brush: js;'> 
+static noinline void __init_refok rest_init(void)
+{
+	int pid;
+	rcu_scheduler_starting();
+	kernel_thread(kernel_init, NULL, CLONE_FS | CLONE_SIGHAND);//启动了另外的线程进行kernel_init操作
+	numa_default_policy();
+	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
+	rcu_read_lock();
+	kthreadd_task = find_task_by_pid_ns(pid, &amp;init_pid_ns);
+	rcu_read_unlock();
+	complete(&amp;kthreadd_done);
+	init_idle_bootup_task(current);
+	preempt_enable_no_resched();
+	schedule();
+	preempt_disable();
+	cpu_idle();
+}
+</pre>
+<h1 id='kernel_init'>kernel_init</h1>
+<pre class='brush: js;'> 
+static int __init kernel_init(void * unused)
+{
+	/*
+	 * Wait until kthreadd is all set-up.
+	 */
+	wait_for_completion(&amp;kthreadd_done);
+	/*
+	 * init can allocate pages on any node
+	 */
+	set_mems_allowed(node_states[N_HIGH_MEMORY]);
+	/*
+	 * init can run on any cpu.
+	 */
+	set_cpus_allowed_ptr(current, cpu_all_mask);
+	cad_pid = task_pid(current);
+	smp_prepare_cpus(setup_max_cpus);
+	do_pre_smp_initcalls();
+	lockup_detector_init();
+	smp_init();
+	sched_init_smp();
+	do_basic_setup();//基本的初始化
+</pre>
+<h1 id='do_basic_setup'>do_basic_setup</h1>
+<pre class='brush: js;'> 
+static void __init do_basic_setup(void)
+{
+	cpuset_init_smp();
+	usermodehelper_init();
+	init_tmpfs();
+	driver_init();//驱动初始化
+	init_irq_proc();
+	do_ctors();
+	do_initcalls();//开始调用所有的初始化函数.
+}
+</pre>
+<h1 id='do_initcalls'>do_initcalls</h1>
+<pre class='brush: js;'> 
+static void __init do_initcalls(void)
+{
+	initcall_t *fn;
+	for (fn = __early_initcall_end; fn &lt; __initcall_end; fn++)
+		do_one_initcall(*fn);
+}
+</pre>
+<p>在这里,我们需要来理解一个东西, 就是在__early_initcall_end和__initcall_end之间的初始化的动作,到底是如何操作的,是在哪里赋值的呢?下面我们重点来看看.</p>
+<pre class='brush: js;'> 
+/* include/linux/init.h */
+/* initcalls are now grouped by functionality into separate 
+* subsections. Ordering inside the subsections is determined
+* by link order. 
+* For backwards compatibility, initcall() puts the call in 
+* the device init subsection.
+*/
+
+#define __define_initcall(level,fn) \
+       static initcall_t __initcall_##fn __attribute_used__ \
+       __attribute__((__section__(".initcall" level ".init"))) = fn
+
+#define core_initcall(fn)        __define_initcall("1",fn)
+#define postcore_initcall(fn)        __define_initcall("2",fn)
+#define arch_initcall(fn)        __define_initcall("3",fn)
+#define subsys_initcall(fn)            __define_initcall("4",fn)
+#define fs_initcall(fn)                     __define_initcall("5",fn)
+#define device_initcall(fn)           __define_initcall("6",fn)
+#define late_initcall(fn)         __define_initcall("7",fn)
+
+#define __initcall(fn) device_initcall(fn)
+#define __exitcall(fn) \
+       static exitcall_t __exitcall_##fn __exit_call = fn
+
+#define console_initcall(fn) \
+       static initcall_t __initcall_##fn \
+       __attribute_used__ __attribute__((__section__(".con_initcall.init")))=fn
+
+#define security_initcall(fn) \
+       static initcall_t __initcall_##fn \
+       __attribute_used__ __attribute__((__section__(".security_initcall.init"))) = fn
+#define module_init(x)   __initcall(x);//从这里知道module_init的等级为6，相对靠后
+#define module_exit(x)  __exitcall(x);
+</pre>
+<p>可以发现这些initcall(fn)最终都是通过__define_initcall(level,fn)宏定义生成的。 __define_initcall宏定义如下：</p>
+<pre class='brush: js;'> 
+#define __define_initcall(level,fn) \
+       static initcall_t __initcall_##fn __attribute_used__ \
+       __attribute__((__section__(".initcall" level ".init"))) = fn
+</pre>
+<p>这句话的意思为定义一个initcall_t型的初始化函数，函数存放在.initcall”level”.init section内。.initcall”level”.init section定义在vmlinux.lds内。</p>
+<pre class='brush: js;'> 
+__initcall_start = .; 
+*(.initcallearly.init) __early_initcall_end = .; 
+*(.initcall0.init) 
+*(.initcall0s.init) 
+*(.initcall1.init) 
+*(.initcall1s.init) 
+*(.initcall2.init) 
+*(.initcall2s.init) 
+*(.initcall3.init) 
+*(.initcall3s.init) 
+*(.initcall4.init) 
+*(.initcall4s.init) 
+*(.initcall5.init) 
+*(.initcall5s.init) 
+*(.initcallrootfs.init) 
+*(.initcall6.init) 
+*(.initcall6s.init) 
+*(.initcall7.init) 
+*(.initcall7s.init) 
+__initcall_end = .;
+</pre>
+<p>正好包括了上面init.h里定义的从core_initcall到late_initcall等7个level等级的.initcall”level”.init section. 因此通过不同的*_initcall声明的函数指针最终都会存放不同level等级的.initcall”level”.init section内。这些不同level的section按level等级高低依次存放。</p>
+
+<h1 id='id3'>结语</h1>
+
+<p>由于对于内核启动的具体细节很不清楚,本文只是一个初稿,以后笔者会不断的来完善这篇文章的.</p>
+
+  <address class="signature">
+    <a class="author" href="/">YiMeng Yang</a> 
+    <span class="date">23 September 2012</span>
+    <span class="location"></span>
+  </address>
+  
+  <div class="prev-next">
+  
+    <a href="/work android linux/2012/09/23/android-socket" class="next" title="android 如何创建socket套接字的原理">Next Post &rarr;</a>
+  
+  
+    <a href="/work android linux/2012/09/23/android-" class="prev" title="android 启动过程分析">&larr; Earlier Post</a>
+  
+  </div>
+  
+</div><!-- End Page -->
+
+
+
+
+  
+  <div id="footer">
+  	<address>
+  		<span class="copyright">
+  			Content by <a href="/info/site.html">YiMeng Yang</a>. Design by 
+  			<a href="http://mark.reid.name/">Mark Reid</a>
+  			<br/>
+  			(<a rel="licence" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Some rights reserved</a>)			
+  		</span>
+  		<span class="engine">
+  			Powered by <a href="http://github.com/mojombo/jekyll/" title="A static, minimalist CMS">Jekyll</a>
+  		</span>
+  	</address>
+  </div>
+  
+</div>
+
+<!--[if IE 6]>
+<script type="text/javascript"> 
+	/*Load jQuery if not already loaded*/ if(typeof jQuery == 'undefined'){ document.write("<script type=\"text/javascript\"   src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js\"></"+"script>"); var __noconflict = true; } 
+	var IE6UPDATE_OPTIONS = {
+		icons_path: "http://static.ie6update.com/hosted/ie6update/images/"
+	}
+</script>
+<script type="text/javascript" src="http://static.ie6update.com/hosted/ie6update/ie6update.js"></script>
+<![endif]-->
+
+  
+
+<a id=top-link onclick="goTop();return false;" href="javascript:void(0);"><img src="/images/uparrow.png"  title="返回顶部" /></a> 
+
+
+
+</body>
+</html>
+

@@ -1,0 +1,505 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+   <title>linux lds 使用技巧 &larr; </title>
+   <meta name="author" content="YiMeng Yang" />
+
+   <link rel="start" href="/" />
+
+	
+	
+	
+  	<link rel="alternate" type="application/atom+xml" href="http://feeds.feedburner.com/feedname" title="RSS feed" />
+	
+	
+
+
+
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/pygments.css" type="text/css" />
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/syntax.css" type="text/css" />   
+   <!-- Homepage CSS -->
+   <link rel="stylesheet" href="/assets/themes/mark-reid/css/screen.css" type="text/css" />
+<style>
+.ymy_div {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 40px;
+}
+
+
+.triangle-isosceles {
+  position:relative;
+  padding:15px;
+  margin:1em 0 3em;
+  color:#000;
+  background:#EEE; /* default background for browsers without gradient support */
+  /* css3 */
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+  -webkit-border-radius:10px;
+  -moz-border-radius:10px;
+  border-radius:10px;
+}
+
+/* Variant : for top positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.top {
+  background:-webkit-gradient(linear, 0 0, 0 100%, from(#EEE), to(#EEE));
+  background:-moz-linear-gradient(#EEE, #EEE);
+  background:-o-linear-gradient(#EEE, #EEE);
+  background:linear-gradient(#EEE, #EEE);
+}
+
+/* Variant : for left/right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.left {
+  margin-left:50px;
+  background:#EEE;
+}
+
+/* Variant : for right positioned triangle
+------------------------------------------ */
+
+.triangle-isosceles.right {
+  margin-right:50px;
+  background:#EEE;
+}
+
+/* THE TRIANGLE
+------------------------------------------------------------------------------------------------------------------------------- */
+
+/* creates triangle */
+.triangle-isosceles:after {
+  content:"";
+  position:absolute;
+  bottom:-15px; /* value = - border-top-width - border-bottom-width */
+  left:50px; /* controls horizontal position */
+  border-width:15px 15px 0; /* vary these values to change the angle of the vertex */
+  border-style:solid;
+  border-color:#EEE transparent;
+    /* reduce the damage in FF3.0 */
+    display:block; 
+    width:0;
+}
+
+/* Variant : top
+------------------------------------------ */
+
+.triangle-isosceles.top:after {
+  top:-15px; /* value = - border-top-width - border-bottom-width */
+  right:50px; /* controls horizontal position */
+  bottom:auto;
+  left:auto;
+  border-width:0 15px 15px; /* vary these values to change the angle of the vertex */
+  border-color:#EEE transparent;
+}
+
+/* Variant : left
+------------------------------------------ */
+
+.triangle-isosceles.left:after {
+  top:16px; /* controls vertical position */
+  left:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  border-width:10px 50px 10px 0;
+  border-color:transparent #EEE;
+}
+
+/* Variant : right
+------------------------------------------ */
+
+.triangle-isosceles.right:after {
+  top:16px; /* controls vertical position */
+  right:-50px; /* value = - border-left-width - border-right-width */
+  bottom:auto;
+  left:auto;
+  border-width:10px 0 10px 50px;
+  border-color:transparent #EEE;
+}
+
+
+#top-link {
+    PADDING-RIGHT: 10px;     
+    PADDING-LEFT: 10px; 
+    FONT-WEIGHT: bold; 
+    
+    BACKGROUND: whiteSmoke; 
+    PADDING-BOTTOM: 10px;
+    filter:alpha(opacity=20);
+    opacity:.2; 
+    BOTTOM: 5px; 
+    PADDING-TOP: 10px;     
+    POSITION: fixed; 
+    TEXT-DECORATION: none
+}
+
+
+
+</style>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/miaov.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shCore.js"></script>
+  <script type="text/javascript" src="/assets/themes/mark-reid/scripts/shBrushJScript.js"></script>
+  <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/shCoreDefault.css"/>
+ <link type="text/css" rel="stylesheet" href="/assets/themes/mark-reid/styles/miaov_style.css"/>
+ <script type="text/javascript">
+
+    SyntaxHighlighter.all();
+/**
+ * 回到页面顶部
+ * @param acceleration 加速度
+ * @param time 时间间隔 (毫秒)
+ **/
+function goTop(acceleration, time) {
+    acceleration = acceleration || 0.1;
+    time = time || 16;
+ 
+    var x1 = 0;
+    var y1 = 0;
+    var x2 = 0;
+    var y2 = 0;
+    var x3 = 0;
+    var y3 = 0;
+ 
+    if (document.documentElement) {
+        x1 = document.documentElement.scrollLeft || 0;
+        y1 = document.documentElement.scrollTop || 0;
+    }
+    if (document.body) {
+        x2 = document.body.scrollLeft || 0;
+        y2 = document.body.scrollTop || 0;
+    }
+    var x3 = window.scrollX || 0;
+    var y3 = window.scrollY || 0;
+ 
+    // 滚动条到页面顶部的水平距离
+    var x = Math.max(x1, Math.max(x2, x3));
+    // 滚动条到页面顶部的垂直距离
+    var y = Math.max(y1, Math.max(y2, y3));
+ 
+    // 滚动距离 = 目前距离 / 速度, 因为距离原来越小, 速度是大于 1 的数, 所以滚动距离会越来越小
+    var speed = 1 + acceleration;
+    window.scrollTo(Math.floor(x / speed), Math.floor(y / speed));
+ 
+    // 如果距离不为零, 继续调用迭代本函数
+    if(x > 0 || y > 0) {
+        var invokeFunction = "goTop(" + acceleration + ", " + time + ")";
+        window.setTimeout(invokeFunction, time);
+    }
+}
+
+ </script>
+
+</head>
+<body id="">
+<div id="site">
+  
+  <div id="header">
+    <h1>
+    	<a href="/" title="Jekyll Bootstrap">Jekyll Bootstrap</a>
+    	<span class="byline">&larr; <a href="/">YiMeng Yang</a></span>
+    </h1>
+    <ul class="nav">
+      <li><a class="home" href="/">Home</a></li>
+      <li><a  href="/life.html">Life</a></li>
+      <li><a  href="/work.html">Work</a></li>
+      <li><a  href="/about.html">About</a></li>
+      <li><a  href="/other.html">Other</a></li>
+    </ul>
+  </div>
+
+  
+<div id="page">
+	
+  <h1 class="emphnext">linux lds 使用技巧</h1>
+
+
+  <p>每一个链接过程都由链接脚本(linker script, 一般以lds作为文件的后缀名)控制. 链接脚本主要用于规定如何把输入文件内的section放入输出文件内, 并控制输出文件内各部分在程序地址空间内的布局.本文主要是讲解利用lds脚本文件来控制程序的一个小技巧.</p>
+
+<h1 id='id21'>实例分析</h1>
+
+<p>为了简单的说明, 这里讲实例讲解这个技巧.这个技巧主要是在链接脚本里定义自定义的section,来存放程序的代码和变量.且看代码.</p>
+
+<h2 id='c'>c程序</h2>
+<pre class='brush: js;'>
+#include &lt;stdio.h&gt;
+ 
+typedef int (*initcall_t)(void); /*定义函数指针*/
+extern initcall_t __initcall_start, __initcall_end; /*申明外部变量,在ld的脚本文件中定义*/
+ 
+#define __initcall(fn) \
+static initcall_t __initcall_##fn __init_call = fn
+#define __init_call     __attribute__ ((unused,__section__ ("function_ptrs")))
+#define module_init(x) __initcall(x);
+/*上述宏定义名为"__initcall_函数名"的函数指针,且将函数指针放在function_ptrs节
+ 这个函数指针，指向fn(fn函数则放在code_segment节中)*/
+ 
+#define __init __attribute__ ((__section__ ("code_segment")))
+ 
+static int __init /*函数放在code_segment节*/
+my_init1 (void)
+{
+       printf ("my_init () #1\n");
+       return 0;
+}
+ 
+static int __init
+my_init2 (void)
+{
+       printf ("my_init () #2\n");
+       return 0;
+}
+ 
+module_init (my_init1);/*定义要被调用的函数指针并放到指定的节中*/
+module_init (my_init2);
+ 
+void
+do_initcalls (void)
+{
+       initcall_t *call_p;// 定义函数指针变量
+ 
+       call_p = &amp;__initcall_start;/*获取节首址*/
+       do {
+              fprintf (stderr, "call_p: %p\n", call_p);
+              (*call_p)();
+              ++call_p;/*32位机器上,函数指针占4bytes，增加一次就是指针便宜4bytes*/
+       } while (call_p &lt; &amp;__initcall_end);
+}
+ 
+int
+main (void)
+{
+       fprintf (stderr, "in main()\n");
+       do_initcalls (); /*调用*/
+       return 0;
+}
+</pre>
+<ol>
+<li>在这里, 对gcc的__attribute__属性进行稍微讲解, 关键字__attribute__允许你在声明的时候指定特殊的属性,在这里我们使用了__section__的属性,这个属性的作用在于将具有该属性的变量放于该__section__里面.</li>
+
+<li>另外还有的就是, unused的属性在于声明拥有该属性的变量可能会没有被使用,因此编译器在发现该变量没有被使用的情况下,不会发出警告.</li>
+
+<li>还有的就是上面的程序将my_init1函数和my_init2函数放在code_segment的section里面.而__initcall_my_init1和initcall_my_init2指针将放于function_ptrs的section里面.</li>
+</ol>
+
+<h2 id='lds'>lds程序</h2>
+
+<p>下面的就是连接脚本程序link.lds, 即linker script.</p>
+<pre class='brush: js;'>
+  .data           :
+  {
+    *(.data .data.* .gnu.linkonce.d.*)
+    SORT(CONSTRUCTORS)
+  }
+  .data1          : { *(.data1) }
+  _edata = .; PROVIDE (edata = .);
+
+
+   /*定义__initcall_start符号为当前位置,即.代表当前位置*/
+  __initcall_start = .;
+  function_ptrs   : { *(function_ptrs) }
+  __initcall_end = .;
+  /*上述3行代码代表function_ptrs节位于__initcall_start和__initcall_end之间*/
+  code_segment    : { *(code_segment) }
+
+
+  __bss_start = .;
+  .bss            :
+  {
+   *(.dynbss)
+   *(.bss .bss.* .gnu.linkonce.b.*)
+   *(COMMON)
+   /* Align here to ensure that the .bss section occupies space up to
+      _end.  Align after .bss to ensure correct alignment even if the
+      .bss section disappears because there are no input sections.
+      FIXME: Why do we need it? When there is no .bss section, we don't
+      pad the .data section.  */
+   . = ALIGN(. != 0 ? 32 / 8 : 1);
+  }
+</pre>
+<ol>
+<li>在这个脚本里定义了我们程序所要使用的section(function_ptrs, code_segment)</li>
+
+<li>__initcall_start,__initcall_end作为function_ptrs的section的起始地址和结束地址.</li>
+
+<li>my_init1 和 my_init2 函数的code将会存放在名为code_segment的section里面.</li>
+</ol>
+
+<h1 id='id22'>编译</h1>
+
+<p>在终端执行如下命令</p>
+<pre class='brush: js;'>
+gcc -Tlinker.lds -o doinitcall doinitcall.c
+</pre>
+<p>其中-T选项告诉ld要用的连接控制脚本文件,做为链接程序的依据</p>
+
+<h1 id='id23'>运行</h1>
+
+<p>在终端执行如下命令</p>
+<pre class='brush: js;'>
+$ ./doinitcall      
+in main()
+call_p: 0x804961c
+my_init () #1
+call_p: 0x8049620
+my_init () #2
+</pre>
+<h1 id='id24'>应用实例</h1>
+
+<p>上面的这种技巧,在linux的内核源码中是十分常见的,下面我将会举一个很著名的例子来看看这个技巧的实用性.</p>
+
+<p>linux内核关于初始化的区段的定义.内核源码的各个模块通过调用到core_initcall等一系列的宏来讲需要初始化的函数放置在.initcall0.init到initcall7.init的section中.宏的定义如下.</p>
+
+<h2 id='id25'>宏定义</h2>
+<pre class='brush: js;'>
+
+#define __define_initcall(level,fn,id) \
+	static initcall_t __initcall_##fn##id __used \
+	__attribute__((__section__(".initcall" level ".init"))) = fn
+
+/*
+ * Early initcalls run before initializing SMP.
+ *
+ * Only for built-in code, not modules.
+ */
+#define early_initcall(fn)		__define_initcall("early",fn,early)
+
+/*
+ * A "pure" initcall has no dependencies on anything else, and purely
+ * initializes variables that couldn't be statically initialized.
+ *
+ * This only exists for built-in code, not for modules.
+ */
+#define pure_initcall(fn)		__define_initcall("0",fn,0)
+
+#define core_initcall(fn)		__define_initcall("1",fn,1)
+#define core_initcall_sync(fn)		__define_initcall("1s",fn,1s)
+#define postcore_initcall(fn)		__define_initcall("2",fn,2)
+#define postcore_initcall_sync(fn)	__define_initcall("2s",fn,2s)
+#define arch_initcall(fn)		__define_initcall("3",fn,3)
+#define arch_initcall_sync(fn)		__define_initcall("3s",fn,3s)
+#define subsys_initcall(fn)		__define_initcall("4",fn,4)
+#define subsys_initcall_sync(fn)	__define_initcall("4s",fn,4s)
+#define fs_initcall(fn)			__define_initcall("5",fn,5)
+#define fs_initcall_sync(fn)		__define_initcall("5s",fn,5s)
+#define rootfs_initcall(fn)		__define_initcall("rootfs",fn,rootfs)
+#define device_initcall(fn)		__define_initcall("6",fn,6)
+#define device_initcall_sync(fn)	__define_initcall("6s",fn,6s)
+#define late_initcall(fn)		__define_initcall("7",fn,7)
+#define late_initcall_sync(fn)		__define_initcall("7s",fn,7s)
+
+#define module_init(x)	__initcall(x);
+</pre>
+<h2 id='lds'>lds脚本</h2>
+<pre class='brush: js;'>
+__setup_start = .; 
+*(.init.setup) __setup_end = .; 
+__initcall_start = .; 
+*(.initcallearly.init) __early_initcall_end = .; 
+*(.initcall0.init) 
+*(.initcall0s.init) 
+*(.initcall1.init) 
+*(.initcall1s.init) 
+*(.initcall2.init) 
+*(.initcall2s.init) 
+*(.initcall3.init) 
+*(.initcall3s.init) 
+*(.initcall4.init) 
+*(.initcall4s.init) 
+*(.initcall5.init) 
+*(.initcall5s.init) 
+*(.initcallrootfs.init) 
+*(.initcall6.init) 
+*(.initcall6s.init) 
+*(.initcall7.init) 
+*(.initcall7s.init) __initcall_end = .;
+</pre>
+<p>在这个链接脚本里,定义了上面的宏所使用到的各个section.</p>
+
+<h2 id='id26'>应用代码</h2>
+<pre class='brush: js;'>
+extern initcall_t __initcall_start[], __initcall_end[], __early_initcall_end[];
+//引用了上面的lds脚本里面定义的变量
+static void __init do_initcalls(void)
+{
+	initcall_t *fn;
+    //通过存放在这个区域里的初始化函数的指针,来调用这些函数,进行初始化.
+	for (fn = __early_initcall_end; fn &lt; __initcall_end; fn++)
+		do_one_initcall(*fn);
+}
+</pre>
+<h1 id='id27'>结语</h1>
+
+<p>本文讲述了gcc的编译利器__attribute__,通过__attribute__可以方便用户来对程序进行更多的可控行为,操作各种的属性.定义section.当然使用多的话对于系统的移植是很不利的.其次,也讲解了利用lds链接脚本来对程序进行控制的方法.</p>
+
+<h1 id='id28'>参考</h1>
+
+<ul>
+<li><a href='http://blog.csdn.net/zhang405744522/article/details/5004817'>lds基础</a></li>
+</ul>
+
+  <address class="signature">
+    <a class="author" href="/">YiMeng Yang</a> 
+    <span class="date">05 October 2012</span>
+    <span class="location"></span>
+  </address>
+  
+  <div class="prev-next">
+  
+    <a href="/script awk/2012/10/06/awk-" class="next" title="awk 入门(转)">Next Post &rarr;</a>
+  
+  
+    <a href="/work linux clanguage/2012/09/27/linux-poll" class="prev" title="linux poll的使用">&larr; Earlier Post</a>
+  
+  </div>
+  
+</div><!-- End Page -->
+
+
+
+
+  
+  <div id="footer">
+  	<address>
+  		<span class="copyright">
+  			Content by <a href="/info/site.html">YiMeng Yang</a>. Design by 
+  			<a href="http://mark.reid.name/">Mark Reid</a>
+  			<br/>
+  			(<a rel="licence" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Some rights reserved</a>)			
+  		</span>
+  		<span class="engine">
+  			Powered by <a href="http://github.com/mojombo/jekyll/" title="A static, minimalist CMS">Jekyll</a>
+  		</span>
+  	</address>
+  </div>
+  
+</div>
+
+<!--[if IE 6]>
+<script type="text/javascript"> 
+	/*Load jQuery if not already loaded*/ if(typeof jQuery == 'undefined'){ document.write("<script type=\"text/javascript\"   src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js\"></"+"script>"); var __noconflict = true; } 
+	var IE6UPDATE_OPTIONS = {
+		icons_path: "http://static.ie6update.com/hosted/ie6update/images/"
+	}
+</script>
+<script type="text/javascript" src="http://static.ie6update.com/hosted/ie6update/ie6update.js"></script>
+<![endif]-->
+
+  
+
+<a id=top-link onclick="goTop();return false;" href="javascript:void(0);"><img src="/images/uparrow.png"  title="返回顶部" /></a> 
+
+
+
+</body>
+</html>
+
